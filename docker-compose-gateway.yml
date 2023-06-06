@@ -1,0 +1,229 @@
+version: '3.8'
+services:
+  
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    hostname: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CODE_PATH}:/var/www:rw
+      - ./gateway/nginx/logs:/var/log/nginx:rw
+      - ./gateway/nginx/conf:/etc/nginx
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    hostname: traefik
+    command:
+      - --experimental.hub=true
+      - --hub.tls.insecure=true
+      - --metrics.prometheus.addrouterslabels=true
+    ports:
+      - "18080:8080"
+      - "1080:80"
+      - "1443:443"
+    volumes:
+      - ./gateway/traefik/conf/traefik.yml:/etc/traefik/traefik.yml
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  
+  hub-agent:
+    image: ghcr.io/traefik/hub-agent-traefik:experimental
+    pull_policy: always
+    container_name: hub-agent
+    restart: "on-failure"
+    command:
+      - run
+      - --hub.token=dccc075a-efb7-4105-a1a0-d9e368e7f689
+      - --auth-server.advertise-url=http://hub-agent
+      - --traefik.host=traefik
+      - --traefik.tls.insecure=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - traefik
+
+  consul1:
+    image: consul:latest
+    container_name: consul1
+    hostname: consul1
+    environment:
+      TZ: 'Asia/Shanghai'
+    command: agent -server -bootstrap-expect=3 -node=server1 -bind=0.0.0.0 -client=0.0.0.0 -datacenter=dc1
+    volumes:
+      - ./gateway/consul/server1/data:/consul/data
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  consul2:
+    image: consul:latest
+    container_name: consul2
+    hostname: consul2
+    environment:
+      TZ: 'Asia/Shanghai'
+    command: agent -server -retry-join=consul1 -bootstrap-expect=3 -node=server2 -bind=0.0.0.0 -client=0.0.0.0 -datacenter=dc1
+    volumes:
+      - ./gateway/consul/server2/data:/consul/data
+    depends_on:
+      - consul1
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  consul3:
+    image: consul:latest
+    container_name: consul3
+    hostname: consul3
+    environment:
+      TZ: 'Asia/Shanghai'
+    command: agent -server -retry-join=consul1 -bootstrap-expect=3 -node=server3 -bind=0.0.0.0 -client=0.0.0.0 -datacenter=dc1
+    volumes:
+      - ./gateway/consul/server3/data:/consul/data
+    depends_on:
+      - consul1
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  consul4:
+    image: consul:latest
+    container_name: consul4
+    hostname: consul4
+    environment:
+      TZ: 'Asia/Shanghai'
+    ports:
+      - '8500:8500'
+    command: agent -retry-join=consul1 -node=client1 -bind=0.0.0.0 -client=0.0.0.0 -datacenter=dc1 -ui
+    volumes:
+      - ./gateway/consul/client1/data:/consul/data
+    depends_on:
+      - consul2
+      - consul3
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  kong:
+    image: kong:latest
+    container_name: kong
+    hostname: kong
+    environment:
+      TZ: 'Asia/Shanghai'
+      KONG_DATABASE: mysql
+      KONG_PG_HOST: PG
+      KONG_PG_USER: root
+      KONG_PG_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      KONG_PROXY_ACCESS_LOG: '/dev/stdout'
+      KONG_ADMIN_ACCESS_LOG: '/dev/stdout'
+      KONG_PROXY_ERROR_LOG: '/dev/stderr'
+      KONG_ADMIN_ERROR_LOG: '/dev/stderr'
+      KONG_ADMIN_LISTEN: '0.0.0.0:8001, 0.0.0.0:8444 ssl'
+    ports:
+      - '28000:8000'
+      - '28443:8443'
+      - '28001:8001'
+      - '28444:8444'
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  tyk:
+    image: docker.tyk.io/tyk-gateway/tyk-gateway:v3.2.1
+    container_name: tyk
+    hostname: tyk
+    environment:
+      - TYK_GW_SECRET=foo
+    volumes:
+      - ./gateway/tyk/tyk.standalone.conf:/opt/tyk-gateway/tyk.conf
+      - ./gateway/tyk/apps:/opt/tyk-gateway/apps
+      - ./gateway/tyk/middleware:/opt/tyk-gateway/middleware
+      - ./gateway/tyk/certs:/opt/tyk-gateway/certs
+    ports:
+      - '28080:8080'
+    depends_on:
+      - redis
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  tyk-dashboard:
+    image: tykio/tyk-dashboard:latest
+    container_name: tyk-dashboard
+    hostname: tyk-dashboard
+    environment:
+      - TYK_GW_SECRET=foo
+    volumes:
+      - ./gateway/tyk/tyk.standalone.conf:/opt/tyk-gateway/tyk.conf
+      - ./gateway/tyk/apps:/opt/tyk-gateway/apps
+      - ./gateway/tyk/middleware:/opt/tyk-gateway/middleware
+      - ./gateway/tyk/certs:/opt/tyk-gateway/certs
+    ports:
+      - '28080:8080'
+    depends_on:
+      - redis
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  apisix:
+    image: apache/apisix:2.13.3-alpine
+    container_name: apisix
+    hostname: apisix
+    restart: always
+    volumes:
+      - ./gateway/apisix/logs:/usr/local/apisix/logs
+      - ./gateway/apisix/conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - etcd
+    ##network_mode: host
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "9180:9180/tcp"
+      - "9091:9091/tcp"
+      - "9092:9092/tcp"
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  apisix-dashboard:
+    image: apache/apisix-dashboard:2.15.0-alpine
+    container_name: apisix-dashboard
+    hostname: apisix-dashboard
+    restart: always
+    volumes:
+    - ./gateway/apisix/dashboard/conf.yaml:/usr/local/apisix-dashboard/conf/conf.yaml
+    ports:
+    - "9000:9000"
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  devops:
+    external: true

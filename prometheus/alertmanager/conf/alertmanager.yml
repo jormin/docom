@@ -1,0 +1,19 @@
+global:
+  resolve_timeout: 5m
+
+  # SMTP
+  smtp_smarthost: 'smtp.163.com:25'
+  smtp_from: 'wiznote_wcxst@163.com'
+  smtp_auth_username: 'wiznote_wcxst@163.com'
+  smtp_auth_password: 'GMTJJAWIAXBCHEKO'
+  smtp_require_tls: false
+  smtp_hello: '163.com'
+route:
+  receiver: email_and_webhook
+receivers:
+    - name: email_and_webhook
+      email_configs:
+      - to: 'jorminxee@gmail.com'
+      webhook_configs:
+      - url: 'http://host.docker.internal:19099/work_weixin/webhook'
+        send_resolved: false

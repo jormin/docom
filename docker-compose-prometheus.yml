@@ -1,0 +1,94 @@
+version: '3.8'
+services:
+
+  prometheus:
+    image: 'prom/prometheus:latest'
+    container_name: prometheus
+    hostname: prometheus
+    environment:
+      TZ: 'Asia/Shanghai'
+    entrypoint:
+      - /bin/prometheus
+    command: 
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.external-url=http://127.0.0.1:19090
+    ports:
+      - '19090:9090'
+    volumes:
+      - ./prometheus/prometheus/conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus/conf/golang_ping_rule.yml:/etc/prometheus/golang_ping_rule.yml
+    restart: unless-stopped
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  alertmanager:
+    image: 'prom/alertmanager:latest'
+    container_name: alertmanager
+    hostname: alertmanager
+    environment:
+      TZ: 'Asia/Shanghai'
+    entrypoint:
+      - /bin/alertmanager
+    command: 
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - '19093:9093'
+    volumes:
+      - ./prometheus/alertmanager/conf/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    restart: unless-stopped
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mysql_exporter:
+    image: prom/mysqld-exporter
+    container_name: mysqlexporter
+    hostname: mysqlexporter
+    ports:
+      - "9104:9104"
+    environment:
+      DATA_SOURCE_NAME: "root:${MYSQL_ROOT_PASSWORD}@(mysql:3306)/"
+    restart: unless-stopped
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis_exporter:
+    image: oliver006/redis_exporter
+    container_name: redis_exporter
+    hostname: redis_exporter
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: "redis:6379"
+    restart: unless-stopped
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # node_exporter:
+  #   image: quay.io/prometheus/node-exporter:latest
+  #   container_name: node_exporter
+  #   command:
+  #     - '--path.rootfs=/host'
+  #   network_mode: host
+  #   pid: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - '/:/host:ro,rslave'
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+
+networks:
+  devops:
+    external: true

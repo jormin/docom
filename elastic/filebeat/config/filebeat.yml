@@ -1,0 +1,50 @@
+setup.kibana:
+  host: "kibana:5601"
+
+filebeat:
+  inputs:
+    - type: log
+      enabled: true
+      paths:
+        - /var/log/nginx/*.access.log
+      fields: 
+        source: nginx-access
+    # nginx-error
+    - type: log
+      enabled: true
+      paths:
+        - /var/log/nginx/*.error.log
+      fields: 
+        source: nginx-error
+
+processors:
+  - decode_json_fields:
+      fields: ["message"] # 要进行解析的字段
+      target: "" # json内容解析到指定的字段，如果为空（“”），则解析到顶级结构下
+      process_array: false # 数组是否解码，默认值:false
+      max_depth: 1 # 解码深度，默认值：1
+  - timestamp:
+      when.contains:
+        fields:
+          source: "gw-shop-log"
+      # 格式化时间值给时间戳 
+      field: time
+      # 使用我国东八区时间  格式化log时间
+      timezone: Asia/Shanghai
+      layouts:
+        - '2006-01-02 15:04:05'
+        - '2006-01-02 15:04:05.999'
+      test:
+        - '2019-06-22 16:33:51'
+      
+# output.logstash:
+#   hosts: ["logstash:5044"]
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "feb1f9a47775a60b57e87cfc5ba1924d"
+  indices:
+    - index: "%{[fields.source]}"
+
+logging.level: info

@@ -1,0 +1,220 @@
+version: '3.8'
+services:
+  
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    container_name: gitlab
+    hostname: gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.local.com'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        gitlab_rails['time_zone'] = 'Asia/Shanghai'
+        gitlab_rails['gitlab_email_from'] = 'gitlab_wcxst@163.com'
+        gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
+        gitlab_rails['gitlab_email_reply_to'] = 'gitlab_wcxst@163.com'
+        gitlab_rails['backup_keep_time'] = 14515200
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = "smtp.163.com"
+        gitlab_rails['smtp_port'] = 25
+        gitlab_rails['smtp_user_name'] = "gitlab_wcxst@163.com"
+        gitlab_rails['smtp_password'] = "RVVOEQXNINMSJLCP"
+        gitlab_rails['smtp_domain'] = "163.com"
+        gitlab_rails['smtp_authentication'] = "login"
+        gitlab_rails['smtp_enable_starttls_auto'] = true
+        nginx['listen_port'] = 443
+        nginx['redirect_http_to_https'] = true
+        nginx['logrotate_frequency'] = "weekly"
+        nginx['logrotate_rotate'] = 52
+        nginx['logrotate_compress'] = "compress"
+        nginx['logrotate_method'] = "copytruncate"
+        nginx['logrotate_delaycompress'] = "delaycompress"
+        nginx['ssl'] = "on"
+        letsencrypt['enable'] = true
+    ports:
+      - '80:80'
+      - '443:443'
+      - '2224:22'
+    volumes:
+      - ./tool/gitlab/config:/etc/gitlab
+      - ./tool/gitlab/logs:/var/log/gitlab
+      - ./tool/gitlab/data:/var/opt/gitlab
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  gitlab-runner:
+    image: 'gitlab/gitlab-runner:latest'
+    container_name: gitlab-runner
+    hostname: gitlab-runner
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./gitlab/config:/etc/gitlab-runner
+    restart: unless-stopped
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: 'grafana/grafana:9.1.4'
+    container_name: grafana
+    hostname: grafana
+    restart: always
+    environment:
+      TZ: 'Asia/Shanghai'
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./tool/grafana/data:/var/lib/grafana
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  jenkins:
+    image: 'jenkinsci/blueocean:latest'
+    restart: always
+    container_name: jenkins
+    hostname: jenkins
+    privileged: true
+    user: root
+    environment:
+      TZ: 'Asia/Shanghai'
+    ports:
+      - '63190:8080'
+      - '50000:50000'
+    volumes:
+      - ./tool/jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/local/bin/docker:/usr/local/bin/docker
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  xxljob:
+    image: 'xuxueli/xxl-job-admin:${XXL_JOB_IMAGE_TAG}'
+    container_name: xxljob
+    hostname: xxljob
+    environment:
+      TZ: 'Asia/Shanghai'
+      PARAMS: '--spring.datasource.url=jdbc:mysql://mysql:3306/xxl_job?Unicode=true&characterEncoding=UTF-8 --spring.datasource.username=root --spring.datasource.password=${MYSQL_ROOT_PASSWORD} --s pring.mail.host=smtp.exmail.qq.com --spring.mail.username=project_wesocial_noreply@vchangyi.com --spring.mail.password=12sy1B5 --xxl.job.login.username=admin --xxl.job.login.password=vchangyi2022 --xxl.job.logretentiondays=30'
+    ports:
+      - '18080:8080'
+    volumes:
+      - ./tool/xxljob/logs:/data/applogs/xxl-job
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  filebrowser:
+    image: filebrowser/filebrowser
+    container_name: filebrowser
+    hostname: filebrowser
+    volumes:
+      - /Users/Jormin/code:/data/backup
+      - ./tool/filebrowser/data/database.db:/database.db
+      - ./tool/filebrowser/conf/.filebrowser.json:/.filebrowser.json
+    ports:
+      - '58080:80'
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  canal-admin:
+    image: 'canal/canal-admin:latest'
+    container_name: canal-admin
+    hostname: canal-admin
+    environment:
+      TZ: 'Asia/Shanghai'
+      server.port: 8089
+      canal.adminUser: ${CANAL_ADMIN_USERNAME}
+      canal.adminPasswd: ${CANAL_ADMIN_PASSWORD}
+      spring.datasource.address: mysql:3306
+      spring.datasource.database: ${CANAL_ADMIN_DB}
+      spring.datasource.username: ${CANAL_ADMIN_DB_USERNAME}
+      spring.datasource.password: ${CANAL_ADMIN_DB_PASSWORD}
+    ports:
+      - '8089:8089'
+    volumes:
+      - ./tool/canal/canal-admin/conf:/home/admin/canal-admin/conf
+      - ./tool/canal/canal-admin/logs:/home/admin/canal-admin/logs
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  canal-server1:
+    image: 'canal/canal-server:latest'
+    container_name: canal-server1
+    hostname: canal-server1
+    environment:
+      TZ: 'Asia/Shanghai'
+      canal.admin.manager: canal-admin:8089
+      canal.admin.port: 11110
+      canal.admin.user: ${CANAL_ADMIN_USERNAME}
+      canal.admin.passwd: ${CANAL_ADMIN_PASSWORD}
+      canal.admin.register.cluster: cluster
+      canal.admin.register.auto: true
+    ports:
+      - '11110-11112:11110-11112'
+      - '19100:9100'
+    volumes:
+      - ./tool/canal/canal-server1/conf:/home/admin/canal-server/conf
+      - ./tool/canal/canal-server1/logs:/home/admin/canal-server/logs
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  canal-server2:
+    image: 'canal/canal-server:latest'
+    container_name: canal-server2
+    hostname: canal-server2
+    environment:
+      TZ: 'Asia/Shanghai'
+      canal.admin.manager: canal-admin:8089
+      canal.admin.port: 11110
+      canal.admin.user: ${CANAL_ADMIN_USERNAME}
+      canal.admin.passwd: ${CANAL_ADMIN_PASSWORD}
+      canal.admin.register.cluster: cluster
+      canal.admin.register.auto: true
+    ports:
+      - '21110:11110'
+      - '21111:11111'
+      - '21112:11112'
+      - '29100:9100'
+    volumes:
+      - ./tool/canal/canal-server2/conf:/home/admin/canal-server/conf
+      - ./tool/canal/canal-server2/logs:/home/admin/canal-server/logs
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  chatgpt:
+    image: harbor.wcxst.com/jormin/chatgpt-web:v2.10.8
+    container_name: chatgpt
+    hostname: chatgpt
+    environment:
+      TZ: 'Asia/Shanghai'
+      OPENAI_API_KEY: ${CHATGPT_OPENAI_API_KEY}
+      AUTH_SECRET_KEY: ${CHATGPT_AUTH_SECRET_KEY}
+      SOCKS_PROXY_HOST: 'host.docker.internal'
+      SOCKS_PROXY_PORT: '7890'
+    ports:
+      - '3002:3002'
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  devops:
+    external: true

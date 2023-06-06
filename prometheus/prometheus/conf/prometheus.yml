@@ -1,0 +1,56 @@
+# 全局配置信息，它定义的内容会被 scrape_configs 模块中的每个 Job 单独覆盖。
+global:
+  scrape_interval: 15s # 抓取 target 的时间间隔，设置为15秒，默认为1分钟。经验值为10~60秒
+  evaluation_interval: 15s # 计算一条规则配置的时间间隔，设置为15秒，默认为1分钟。
+  # scrape_timeout 抓取 target 的超时时间，默认为10秒。
+  # external_labels 与外部系统通信时添加到任意时间序列或告警所用的外部标签。
+
+# 告警模块，Prometheus Server 发送请求给 Alertmanager 前会触发一次 relabel 操作，alert 子模块下也可以配置 alert_relabel_configs。
+alerting:
+  alertmanagers:
+    - static_configs: # 静态配置 Alertmanager 的地址，也可以依赖服务发现动态识别。
+        - targets:    # 可以配置多个 IP 地址。
+          - alertmanager:9093
+
+# Prometheus 自定义的 rule 主要分为 Recording Rule 和 Alerting Rule 两类
+# 加载一次规则并根据全局“evaluation_interval”定期计算它们。
+rule_files:
+  - /etc/prometheus/golang_ping_rule.yml
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# 采集数据节点的配置，和 global 重合的部分会覆盖掉 global。
+scrape_configs:
+  # Prometheus
+  - job_name: "prometheus"
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node
+  - job_name: 'node'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+      
+  # MySQL
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['host.docker.internal:9104']
+      
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['host.docker.internal:9121']
+      
+  # Golang Ping
+  - job_name: 'golang_ping'
+    static_configs:
+      - targets: ['host.docker.internal:19091']
+      
+  # Micro Scrm
+  - job_name: 'micro_scrm_disk_usage'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/micro-scrm/v1/metrics/disk_usage'
+    scrape_interval: 10s

@@ -1,0 +1,20 @@
+# This file is where you define your pipelines. You can define multiple.
+# For more information on multiple pipelines, see the documentation:
+#   https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html
+
+# - pipeline.id: nginx_demo
+#   path.config: "/usr/share/logstash/pipeline/nginx.demo.conf"
+
+# - pipeline.id: sql_demo
+#   path.config: "/usr/share/logstash/pipeline/sql.demo.conf"
+
+
+# - pipeline.id: ws_prod_sql
+  # path.config: "/usr/share/logstash/pipeline/ws_prod_sql.conf"
+
+
+- pipeline.id: ws_prod
+  path.config: "/usr/share/logstash/pipeline/ws_prod.conf"
+
+# - pipeline.id: work_weixin
+#   path.config: "/usr/share/logstash/pipeline/work_weixin.conf"

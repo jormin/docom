@@ -1,0 +1,66 @@
+version: '3.8'
+services:
+  
+  php72:
+    image: jormin/php:7.2
+    container_name: php72
+    hostname: php72
+    volumes:
+      - ${CODE_PATH}:/var/www:rw
+      - ./php/php72/logs/:/var/log/php
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  
+  php73:
+    image: jormin/php:7.3
+    container_name: php73
+    hostname: php73
+    volumes:
+      - ${CODE_PATH}:/var/www:rw
+      - ./php/php73/logs/:/var/log/php
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  
+  php74:
+    image: jormin/php:7.4
+    container_name: php74
+    hostname: php74
+    volumes:
+      - ${CODE_PATH}:/var/www:rw
+      - ./php/php74/logs/logs:/var/log/php
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  
+  php81:
+    image: jormin/php:8.1
+    container_name: php81
+    hostname: php81
+    volumes:
+      - ${CODE_PATH}:/var/www:rw
+      - ./php/php81/logs/:/var/log/php
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  devops:
+    external: true
