@@ -10,17 +10,17 @@ RUN echo "Asia/Shanghai" > /etc/timezone
 RUN set -ex \
     && apk update \
     && apk add --no-cache libstdc++ wget openssl bash \
-    libmcrypt-dev libzip-dev libpng-dev libc-dev zlib-dev librdkafka-dev libmemcached-dev cyrus-sasl-dev
+    libmcrypt-dev libzip-dev libpng-dev libc-dev zlib-dev librdkafka-dev libmemcached-dev cyrus-sasl-dev icu-dev \
+    freetype freetype-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev
 
 RUN apk add --no-cache --virtual .build-deps autoconf automake make g++ gcc \
     libtool dpkg-dev dpkg pkgconf file re2c pcre-dev php81-dev php81-pear openssl-dev
 
 # 安装php常用扩展
-RUN docker-php-ext-configure gd --with-freetype \
-    && docker-php-ext-install gd bcmath opcache mysqli pdo pdo_mysql sockets zip
+RUN docker-php-ext-configure gd --with-freetype && docker-php-ext-install gd bcmath opcache mysqli pdo pdo_mysql sockets zip
 
 # Extension redis mcrypt  
-RUN pecl install redis mcrypt && docker-php-ext-enable redis mcrypt
+RUN pecl install redis mcrypt xlswriter && docker-php-ext-enable redis mcrypt xlswriter
 
 # 安装 Composer
 RUN wget https://mirrors.cloud.tencent.com/composer/composer.phar \
@@ -32,3 +32,4 @@ RUN wget https://mirrors.cloud.tencent.com/composer/composer.phar \
 RUN apk del .build-deps \
     && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
     && php -m
+

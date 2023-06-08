@@ -20,7 +20,7 @@ RUN apk add --no-cache --virtual .build-deps autoconf automake make g++ gcc \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install gd bcmath opcache mysqli pdo pdo_mysql sockets zip
 
 # Extension redis mcrypt  
-RUN pecl install redis mcrypt && docker-php-ext-enable redis mcrypt
+RUN pecl install redis mcrypt xlswriter && docker-php-ext-enable redis mcrypt xlswriter
 
 # 安装 Composer
 RUN wget https://mirrors.cloud.tencent.com/composer/composer.phar \
