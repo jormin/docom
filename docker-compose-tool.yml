@@ -215,6 +215,22 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  clash:
+    image: dreamacro/clash:v1.14.0
+    container_name: clash
+    ports:
+      - "7890:7890"
+      - "9090:9090"
+    volumes:
+      - ./tool/clash/config.yaml:/root/.config/clash/config.yaml
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 networks:
   devops:
     external: true
