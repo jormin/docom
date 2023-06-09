@@ -231,6 +231,22 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  keeweb:
+    image: antelle/keeweb:latest
+    container_name: keeweb
+    ports:
+      - "8012:80"
+      - "8013:443"
+    volumes:
+      - ./tool/keeweb/:/etc/nginx/external/
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks:
+      - devops
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 networks:
   devops:
     external: true
