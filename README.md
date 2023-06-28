@@ -5,9 +5,12 @@ About
 
 ### 服务列表
 
-#### base
+#### phpetcd
 
-- [x] php
+- [x] php72
+- [x] php73
+- [x] php74
+- [x] php81
 
 #### tool
 
@@ -18,6 +21,9 @@ About
 - [x] xxl-job
 - [x] filebrowser
 - [x] canal admin + canal server
+- [x] chatgpt
+- [x] clash
+- [x] keeweb
 
 #### middleware
 
@@ -29,6 +35,7 @@ About
 - [x] rabbitmq
 - [x] zookeeper
 - [x] kafka + kafkamanager
+- [x] etcd
 
 #### elasic
 
@@ -36,6 +43,7 @@ About
 - [x] kibana
 - [x] logstash
 - [x] filebeat
+- [x] elasticview
 
 #### gateway
 
@@ -44,6 +52,7 @@ About
 - [x] consul
 - [x] kong
 - [x] tyk + tyk-dashboard
+- [x] apisix + apisix-dashboard
 
 #### prometheus
 
@@ -51,7 +60,6 @@ About
 - [x] alertmanager
 - [x] mysql_exporter
 - [x] redis_exporter
-
 
 ### 默认配置
 
@@ -139,4 +147,8 @@ XXL_JOB_IMAGE_TAG=2.3.0
 # ClickHouse
 CLICKHOUSE_PORT_HTTP=8123
 CLICKHOUSE_PORT_TCP=9000
+
+# ChatGPT
+CHATGPT_OPENAI_API_KEY=
+CHATGPT_AUTH_SECRET_KEY=
 ```
