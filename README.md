@@ -5,7 +5,7 @@ About
 
 ### 服务列表
 
-#### phpetcd
+#### php
 
 - [x] php72
 - [x] php73
