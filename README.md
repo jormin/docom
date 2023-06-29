@@ -20,7 +20,8 @@ About
 - [x] jenkins
 - [x] xxl-job
 - [x] filebrowser
-- [x] canal admin + canal server
+- [x] canal admin
+- [x] canal server
 - [x] chatgpt
 - [x] clash
 - [x] keeweb
@@ -29,12 +30,14 @@ About
 
 - [x] mysql
 - [x] clickhouse
-- [x] redis + redisinsight
+- [x] redis
+- [x] redisinsight
 - [x] mongo
 - [x] mongo-express
 - [x] rabbitmq
 - [x] zookeeper
-- [x] kafka + kafkamanager
+- [x] kafka
+- [x] kafkamanager
 - [x] etcd
 
 #### elasic
@@ -48,11 +51,14 @@ About
 #### gateway
 
 - [x] nginx
-- [x] traefik + hub-agent
+- [x] traefik
+- [x] hub-agent
 - [x] consul
 - [x] kong
-- [x] tyk + tyk-dashboard
-- [x] apisix + apisix-dashboard
+- [x] tyk
+- [x] tyk-dashboard
+- [x] apisix
+- [x] apisix-dashboard
 
 #### prometheus
 
@@ -64,7 +70,6 @@ About
 ### 默认配置
 
 需要拷贝 .env.example 为 .env，然后自定义修改配置
-
 
 ```shell
 # 宿主机代码目录
